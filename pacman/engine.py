@@ -182,7 +182,10 @@ class Agent:
 
 
 	def __call__(self, state):
-		"Perform an action in response to the current game state. This method is called every turn."
+		"""
+		Perform an action in response to the current game state.
+		This method is called once every turn.
+		"""
 		raise NotImplementedError
 
 
