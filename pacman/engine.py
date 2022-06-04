@@ -11,7 +11,7 @@ class Engine:
 	Stores and manages the game envioronment and all its agents.
 	The game world is loaded from the file as plain text during the objects initialization.
 	Game objects are then discretized and split into separate layers ( walls, coins, ghosts, distances(NYI) )
-	and can be accessed individually or as a whole matrix ( channels ).
+	and can be accessed individually or as a tensor ( channels ).
 
 	Attributes:
 		score		-- the amount of collected coins ( win condition )
@@ -19,8 +19,10 @@ class Engine:
 		agents		-- list of all the agents ( pacman is always placed at index zero )
 
 		shape		-- game world's width and height measured in game blocks
+
+		pacman		-- pacman agent reference ( equivalent to agents[0] )
 	"""
-	
+
 	Empty = ' '
 	Wall = '#'
 	Coin = '.'
@@ -37,6 +39,7 @@ class Engine:
 		width, height = len(world[0]), len(world)
 		self.score = self.victory_score = self.time = 0		
 		self.agents = [pacman] + ghosts
+		self.pacman = pacman
 		self.channels = zeros(shape = (4, height, width), dtype = int)
 		self.shape = array((width, height))
 		self.walls, self.coins, self.ghosts, self.distances = self.channels
@@ -71,10 +74,11 @@ class Engine:
 			pos = agent.coords()
 			ghosts[pos] = i
 
-			if i == 0:
-				self.score += self.coins[pos]
-				self.coins[pos] = 0
-				self.agents[0].alive &= not self.ghosts[pos]
+		pos = self.pacman.coords()
+		self.score += self.coins[pos]
+		self.coins[pos] = 0
+		self.pacman.alive &= not self.ghosts[pos]
+
 		self.ghosts = ghosts
 		self.time += 1
 		return self
@@ -89,7 +93,7 @@ class Engine:
 			return Engine.Coin
 		elif self.ghosts[y][x]:
 			return self.ghosts[y][x]
-		elif self.agents[0].coords() == (y, x):
+		elif self.pacman.coords() == (y, x):
 			return Engine.Pacman
 		return Engine.Empty
 
@@ -103,10 +107,10 @@ class Engine:
 
 
 	def terminal(self):
-		"Test if the game has run its course and return its result."
+		"Test if the game has run its course and return the result."
 		if self.score == self.victory_score:
 			return 1
-		elif not self.agents[0].alive:
+		elif not self.pacman.alive:
 			return -1
 		return 0
 
@@ -116,12 +120,12 @@ class Agent:
 	"""
 	Entity capable of interacting with the game engine.
 	Use this template to create various game agents through subclassing.
-	Note that __call__() method is virtual and has to be implemented (see RandomAgent example).
+	Note that __call__( ) method is virtual and has to be implemented ( see RandomAgent example ).
 	
 	Attributes:
 		speed		-- the speed with which the agent traverses the environment
 
-		position	-- real agent position (for discrete representation use Agent.coords() instead)
+		position	-- real agent position ( for discrete representation use Agent.coords( ) instead )
 	"""
 	
 	L = array((-1, 0))
