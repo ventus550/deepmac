@@ -32,6 +32,7 @@ class Engine:
 	Coin = '.'
 	Pacman = '@'
 	Ghost = int
+	UnreachableDist = -1
 
 
 	def __init__(self, pacman, ghosts : list, file="pacman/default.map"):
@@ -156,6 +157,10 @@ class Engine:
 					dist_through_mid = self.dist[(from_x, from_y, mid_x, mid_y)] + self.dist[(mid_x, mid_y, to_x, to_y)]
 					if self.dist[(from_x, from_y, to_x, to_y)] > dist_through_mid:
 						self.dist[(from_x, from_y, to_x, to_y)] = dist_through_mid
+		# Switch inf values to NN-safe ones.
+		for k, v in self.dist.items():
+			if v == inf:
+				self.dist[k] = Engine.UnreachableDist
 
 
 	def terminal(self):
