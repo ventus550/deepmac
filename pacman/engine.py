@@ -1,4 +1,4 @@
-from numpy import array, float64, zeros, zeros_like, inf
+from numpy import array, float64, zeros, zeros_like, inf, ones
 from numpy.random import choice
 from math import  floor, ceil
 from itertools import product
@@ -82,6 +82,11 @@ class Engine:
 			except pickle.PickleError as err:
 				print(err, file=sys.stderr)
 
+		self.no_wall_coords = []
+		for x, y in product(range(width), range(height)):
+			if world[y][x] != Engine.Wall:
+				self.no_wall_coords.append((x, y))
+
 
 	def __next__(self):
 		"Transition to the next game state."
@@ -98,6 +103,8 @@ class Engine:
 
 		self.ghosts = ghosts
 		self.time += 1
+
+		self.distances = self.dist_matrix(self.distances.shape, self.pacman.coords())
 		return self
 
 
@@ -151,6 +158,7 @@ class Engine:
 			# Do not consider walls in the algorithm.
 			if world[y][x] != Engine.Wall:
 				coordinates.append((x, y))
+		# Floyd-Warshall
 		for mid_x, mid_y in tqdm(coordinates):
 			for from_x, from_y in coordinates:
 				for to_x, to_y in coordinates:
@@ -170,6 +178,20 @@ class Engine:
 		elif not self.pacman.alive:
 			return -1
 		return 0
+
+
+	def dist_matrix(self, shape: Tuple[int, int], field: Tuple[int, int]):
+		"""Return matrix of distances relative to the given field.
+
+		Args:
+			shape (Tuple[int, int]): Shape of the board (height, width).
+			field (Tuple[int, int]): Coordinates of the field (y, x).
+		"""
+		distances = ones(shape, dtype=int) * Engine.UnreachableDist
+		from_y, from_x = field
+		for x, y in self.no_wall_coords:
+			distances[y][x] = self.dist[(from_x, from_y, x, y)]
+		return distances
 
 
 
