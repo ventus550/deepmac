@@ -4,7 +4,9 @@ from math import  floor, ceil
 from itertools import product
 from pacman import settings
 from tqdm.auto import tqdm
-from typing import Dict, Tuple
+from typing import Dict, List, Tuple
+import sys
+import pickle
 
 
 
@@ -67,43 +69,17 @@ class Engine:
 				ghost.color = settings.ghosts[(gid - 1) % len(settings.ghosts)]
 				ghost.position, ghost.walls = array((x, y), dtype=float64), self.walls
 
-		self.dist : Dict[Tuple[int, int, int, int], int] = {}
+		self.dist: Dict[Tuple[int, int, int, int], int] = {}
 		"""Stores distance between every pair of fields. Usage: `self.dist[(from_x, from_y, to_x, to_y)]`."""
-		for from_x, from_y in product(range(width), range(height)):
-			for to_x, to_y in product(range(width), range(height)):
-				if from_x == to_x and from_y == to_y:
-					self.dist[(from_x, from_y, to_x, to_y)] = 0
-				# Walls are unreachable.
-				elif world[from_y][from_x] == Engine.Wall or world[to_y][to_x] == Engine.Wall:
-					self.dist[(from_x, from_y, to_x, to_y)] = inf
-				# Difference by one vertically/horizontally.
-				elif (abs(from_x - to_x) == 1 and abs(from_y - to_y) == 0) or (abs(from_x - to_x) == 0 and abs(from_y - to_y) == 1):
-					self.dist[(from_x, from_y, to_x, to_y)] = 1
-				else:
-					self.dist[(from_x, from_y, to_x, to_y)] = inf
-		# Special case - corresponding fields near the opposite edges that allow warping.
-		for x in range(width):
-			if world[0][x] != Engine.Wall and world[height - 1][x] != Engine.Wall:
-				self.dist[(x, 0, x, height - 1)] = 1
-				self.dist[(x, height - 1, x, 0)] = 1
-		for y in range(height):
-			if world[y][0] != Engine.Wall and world[y][width - 1] != Engine.Wall:
-				self.dist[(0, y, width - 1, y)] = 1
-				self.dist[(width - 1, y, 0, y)] = 1
-		self.dist[(0, 12, 28, 12)] = 1
-		self.dist[(28, 12, 0, 12)] = 1
-		# Compute distance between each pair of board fields using Floyd-Warshall algorithm.
-		coordinates = []
-		for x, y in product(range(width), range(height)):
-			# Do not consider walls in the algorithm.
-			if world[y][x] != Engine.Wall:
-				coordinates.append((x, y))
-		for mid_x, mid_y in tqdm(coordinates):
-			for from_x, from_y in coordinates:
-				for to_x, to_y in coordinates:
-					dist_through_mid = self.dist[(from_x, from_y, mid_x, mid_y)] + self.dist[(mid_x, mid_y, to_x, to_y)]
-					if self.dist[(from_x, from_y, to_x, to_y)] > dist_through_mid:
-						self.dist[(from_x, from_y, to_x, to_y)] = dist_through_mid
+		pickle_path = file.rsplit("/", 1)[-1] + ".p"
+		try:
+			self.dist = pickle.load(open(pickle_path, "rb"))
+		except FileNotFoundError:
+			self._create_dist_dict(width, height, world)
+			try:
+				pickle.dump(self.dist, open(pickle_path, "wb"))
+			except pickle.PickleError as err:
+				print(err, file=sys.stderr)
 
 
 	def __next__(self):
@@ -144,6 +120,42 @@ class Engine:
 		for y in range(height):
 			string.append("".join(str(self[x, y]) for x in range(width)))
 		return "\n".join(string)
+
+
+	def _create_dist_dict(self, width, height, world: List[str]):
+		for from_x, from_y in product(range(width), range(height)):
+			for to_x, to_y in product(range(width), range(height)):
+				if from_x == to_x and from_y == to_y:
+					self.dist[(from_x, from_y, to_x, to_y)] = 0
+				# Walls are unreachable.
+				elif world[from_y][from_x] == Engine.Wall or world[to_y][to_x] == Engine.Wall:
+					self.dist[(from_x, from_y, to_x, to_y)] = inf
+				# Difference by one vertically/horizontally.
+				elif (abs(from_x - to_x) == 1 and abs(from_y - to_y) == 0) or (abs(from_x - to_x) == 0 and abs(from_y - to_y) == 1):
+					self.dist[(from_x, from_y, to_x, to_y)] = 1
+				else:
+					self.dist[(from_x, from_y, to_x, to_y)] = inf
+		# Special case - corresponding fields near the opposite edges that allow warping.
+		for x in range(width):
+			if world[0][x] != Engine.Wall and world[height - 1][x] != Engine.Wall:
+				self.dist[(x, 0, x, height - 1)] = 1
+				self.dist[(x, height - 1, x, 0)] = 1
+		for y in range(height):
+			if world[y][0] != Engine.Wall and world[y][width - 1] != Engine.Wall:
+				self.dist[(0, y, width - 1, y)] = 1
+				self.dist[(width - 1, y, 0, y)] = 1
+		# Compute distance between each pair of board fields using Floyd-Warshall algorithm.
+		coordinates = []
+		for x, y in product(range(width), range(height)):
+			# Do not consider walls in the algorithm.
+			if world[y][x] != Engine.Wall:
+				coordinates.append((x, y))
+		for mid_x, mid_y in tqdm(coordinates):
+			for from_x, from_y in coordinates:
+				for to_x, to_y in coordinates:
+					dist_through_mid = self.dist[(from_x, from_y, mid_x, mid_y)] + self.dist[(mid_x, mid_y, to_x, to_y)]
+					if self.dist[(from_x, from_y, to_x, to_y)] > dist_through_mid:
+						self.dist[(from_x, from_y, to_x, to_y)] = dist_through_mid
 
 
 	def terminal(self):
