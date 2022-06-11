@@ -166,7 +166,9 @@ class Engine:
 					if self.dist[(from_x, from_y, to_x, to_y)] > dist_through_mid:
 						self.dist[(from_x, from_y, to_x, to_y)] = dist_through_mid
 		# Switch inf values to NN-safe ones.
-		self.dist[self.dist == inf] = Engine.UnreachableDist
+		for k, v in self.dist.items():
+			if v == inf:
+				self.dist[k] = Engine.UnreachableDist
 
 
 	def terminal(self):
