@@ -70,8 +70,8 @@ class Engine:
 				ghost.color = settings.ghosts[(gid - 1) % len(settings.ghosts)]
 				ghost.position, ghost.walls = array((x, y), dtype=float64), self.walls
 
+		# Stores distance between every pair of fields. Usage: `self.dist[(from_x, from_y, to_x, to_y)]`
 		self.dist: Dict[Tuple[int, int, int, int], int] = {}
-		"""Stores distance between every pair of fields. Usage: `self.dist[(from_x, from_y, to_x, to_y)]`."""
 		pickle_path = file.rsplit("/", 1)[-1] + ".p"
 		try:
 			self.dist = pickle.load(open(pickle_path, "rb"))
@@ -166,9 +166,7 @@ class Engine:
 					if self.dist[(from_x, from_y, to_x, to_y)] > dist_through_mid:
 						self.dist[(from_x, from_y, to_x, to_y)] = dist_through_mid
 		# Switch inf values to NN-safe ones.
-		for k, v in self.dist.items():
-			if v == inf:
-				self.dist[k] = Engine.UnreachableDist
+		self.dist[self.dist == inf] = Engine.UnreachableDist
 
 
 	def terminal(self):

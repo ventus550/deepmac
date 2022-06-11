@@ -4,6 +4,9 @@ blksz = 60
 # gameplay frame duration in seconds
 frame_time = 0.01
 
+# display distance matrix in real time
+distances = False
+
 # colors
 background = (46, 52, 64)
 pacman = (255, 255, 120)

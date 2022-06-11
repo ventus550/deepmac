@@ -21,6 +21,7 @@ class GameController(Engine):
 		self.screen = pygame.display.set_mode(screensize, 0, 32)
 		self.background = pygame.surface.Surface(screensize).convert()
 		self.background.fill(settings.paths)
+		self.font = pygame.font.SysFont("monospace", settings.blksz // 4)
 		self.run()
 
 
@@ -65,24 +66,26 @@ class GameController(Engine):
 		pygame.draw.polygon(self.screen, color, triangle, 5)
 	
 
-	def text(self, surface, size, x, y, text, color):
-		font = pygame.font.SysFont("monospace", size)
-		text = font.render(text, 1, color)
-		surface.blit(text, (x, y))
+	def text(self, x, y, text, color):
+		text = self.font.render(text, True, color)
+		self.screen.blit(text, (x, y))
 
 
 	def render(self):
 		width, height = self.shape
 		self.screen.blit(self.background, (0,0))
+		d, blksz = self.distances, settings.blksz
 		for x, y in product(range(width), range(height)):
 			pos = array((x, y)); cell = self[pos]
 			self.draw_wall(pos, fill = cell == Engine.Wall)
+			if settings.distances and d[y, x] != Engine.UnreachableDist:
+				self.text(x*blksz, y*blksz, str(d[y, x]), settings.pacman)
 			if cell == Engine.Coin:
 				self.draw_coin(pos)
 		self.draw_pacman(self.agents[0].position)
 		for ghost in self.agents[1:]:
 			self.draw_ghost(ghost.position, ghost.color)
-		self.text(self.screen, 20, 10, 10, f'Game time {self.time} Score {self.score}', settings.pacman)
+		self.text(20, 10, f'Game time {self.time} Score {self.score}', settings.pacman)
 		pygame.display.update()
 
 	
