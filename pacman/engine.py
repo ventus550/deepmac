@@ -8,8 +8,8 @@ from pacman import settings
 
 class Engine:
 	"""
-	Stores and manages the game envioronment and all its agents.
-	The game world is loaded from the file as plain text during the objects initialization.
+	Stores and manages the game environment and all its agents.
+	The game world is loaded from the file as a plain text during the objects initialization.
 	Game objects are then discretized and split into separate layers ( walls, coins, ghosts, distances(NYI) )
 	and can be accessed individually or as a tensor ( channels ).
 
@@ -37,11 +37,11 @@ class Engine:
 		"""
 		world = open(file).read().split('\n')
 		width, height = len(world[0]), len(world)
+		self.shape = array((width, height))
 		self.score = self.victory_score = self.time = 0		
 		self.agents = [pacman] + ghosts
 		self.pacman = pacman
 		self.channels = zeros(shape = (4, height, width), dtype = int)
-		self.shape = array((width, height))
 		self.walls, self.coins, self.ghosts, self.distances = self.channels
 		
 		for x, y in product(range(width), range(height)):
