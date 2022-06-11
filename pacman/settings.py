@@ -7,6 +7,9 @@ frame_time = 0.01
 # display distance matrix in real time
 distances = False
 
+# cache distance computations into a file
+cache = True
+
 # colors
 background = (46, 52, 64)
 pacman = (255, 255, 120)
