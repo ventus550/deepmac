@@ -32,7 +32,7 @@ class Engine:
 	Coin = '.'
 	Pacman = '@'
 	Ghost = int
-	UnreachableDist = -1
+	Unreachable = -1
 
 
 	def __init__(self, pacman, ghosts : list, file="pacman/default.map"):
@@ -131,18 +131,20 @@ class Engine:
 
 
 	def _create_dist_dict(self, width, height, world: List[str]):
-		for from_x, from_y in product(range(width), range(height)):
-			for to_x, to_y in product(range(width), range(height)):
-				if from_x == to_x and from_y == to_y:
-					self.dist[(from_x, from_y, to_x, to_y)] = 0
-				# Walls are unreachable.
-				elif world[from_y][from_x] == Engine.Wall or world[to_y][to_x] == Engine.Wall:
-					self.dist[(from_x, from_y, to_x, to_y)] = inf
-				# Difference by one vertically/horizontally.
-				elif (abs(from_x - to_x) == 1 and abs(from_y - to_y) == 0) or (abs(from_x - to_x) == 0 and abs(from_y - to_y) == 1):
-					self.dist[(from_x, from_y, to_x, to_y)] = 1
-				else:
-					self.dist[(from_x, from_y, to_x, to_y)] = inf
+		map = lambda: product(range(width), range(height))
+
+		for (from_x, from_y), (to_x, to_y) in product(map(), map()):
+			if from_x == to_x and from_y == to_y:
+				self.dist[(from_x, from_y, to_x, to_y)] = 0
+			# Walls are unreachable.
+			elif world[from_y][from_x] == Engine.Wall or world[to_y][to_x] == Engine.Wall:
+				self.dist[(from_x, from_y, to_x, to_y)] = inf
+			# Difference by one vertically/horizontally.
+			elif (abs(from_x - to_x) == 1 and abs(from_y - to_y) == 0) or (abs(from_x - to_x) == 0 and abs(from_y - to_y) == 1):
+				self.dist[(from_x, from_y, to_x, to_y)] = 1
+			else:
+				self.dist[(from_x, from_y, to_x, to_y)] = inf
+
 		# Special case - corresponding fields near the opposite edges that allow warping.
 		for x in range(width):
 			if world[0][x] != Engine.Wall and world[height - 1][x] != Engine.Wall:
@@ -152,12 +154,10 @@ class Engine:
 			if world[y][0] != Engine.Wall and world[y][width - 1] != Engine.Wall:
 				self.dist[(0, y, width - 1, y)] = 1
 				self.dist[(width - 1, y, 0, y)] = 1
+
 		# Compute distance between each pair of board fields using Floyd-Warshall algorithm.
-		coordinates = []
-		for x, y in product(range(width), range(height)):
-			# Do not consider walls in the algorithm.
-			if world[y][x] != Engine.Wall:
-				coordinates.append((x, y))
+		coordinates = [(x, y) for x, y in map() if world[y][x] != Engine.Wall]
+
 		# Floyd-Warshall
 		for mid_x, mid_y in tqdm(coordinates):
 			for from_x, from_y in coordinates:
@@ -165,10 +165,11 @@ class Engine:
 					dist_through_mid = self.dist[(from_x, from_y, mid_x, mid_y)] + self.dist[(mid_x, mid_y, to_x, to_y)]
 					if self.dist[(from_x, from_y, to_x, to_y)] > dist_through_mid:
 						self.dist[(from_x, from_y, to_x, to_y)] = dist_through_mid
+
 		# Switch inf values to NN-safe ones.
 		for k, v in self.dist.items():
 			if v == inf:
-				self.dist[k] = Engine.UnreachableDist
+				self.dist[k] = Engine.Unreachable
 
 
 	def terminal(self):
@@ -187,7 +188,7 @@ class Engine:
 			shape (Tuple[int, int]): Shape of the board (height, width).
 			field (Tuple[int, int]): Coordinates of the field (y, x).
 		"""
-		distances = ones(shape, dtype=int) * Engine.UnreachableDist
+		distances = ones(shape, dtype=int) * Engine.Unreachable
 		from_y, from_x = field
 		for x, y in self.no_wall_coords:
 			distances[y][x] = self.dist[(from_x, from_y, x, y)]

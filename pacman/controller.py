@@ -78,7 +78,7 @@ class GameController(Engine):
 		for x, y in product(range(width), range(height)):
 			pos = array((x, y)); cell = self[pos]
 			self.draw_wall(pos, fill = cell == Engine.Wall)
-			if settings.distances and d[y, x] != Engine.UnreachableDist:
+			if settings.distances and d[y, x] != Engine.Unreachable:
 				self.text(x*blksz, y*blksz, str(d[y, x]), settings.pacman)
 			if cell == Engine.Coin:
 				self.draw_coin(pos)
