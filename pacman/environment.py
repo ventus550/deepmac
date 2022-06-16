@@ -32,9 +32,9 @@ class Environment:
 	Pacman = '@'
 	Ghost = int
 	Unreachable = -1
+	path = "/".join(__loader__.path.split('/')[:-1])
 
-
-	def __init__(self, pacman, ghosts : list, file="pacman/default.map"):
+	def __init__(self, pacman, ghosts : list, file=f"{path}/default.map"):
 		"""
 		Load the game world from a map file and spawn the agents.
 		Note that the single digits in the world map file correspond to the ghost agents passed in the argument.

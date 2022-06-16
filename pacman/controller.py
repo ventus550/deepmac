@@ -14,7 +14,7 @@ class GameController(Environment):
 	Runs the app version of the game.
 	Provides a reliable way of supervising the agents' actions. 
 	"""
-	def __init__(self, pacman, ghosts : list, file = "pacman/default.map"):
+	def __init__(self, pacman, ghosts : list, file = f"{Environment.path}/default.map"):
 		super().__init__(pacman, ghosts, file)
 		pygame.init()
 		screensize = self.shape * settings.blksz
