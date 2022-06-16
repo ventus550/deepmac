@@ -4,16 +4,16 @@ from numpy import array, zeros, zeros_like, inf, ones
 from math import  floor, ceil
 from itertools import product
 from tqdm.auto import tqdm
-from typing import Dict, List, Tuple
+from typing import Dict, Tuple
 import sys, pickle
 
 
 
-class Engine:
+class Environment:
 	"""
 	Stores and manages the game environment and all its agents.
 	The game world is loaded from the file as a plain text during the objects initialization.
-	Game objects are then discretized and split into separate layers ( walls, coins, ghosts, distances(NYI) )
+	Game objects are then discretized and split into separate layers ( walls, coins, ghosts, distances )
 	and can be accessed individually or as a tensor ( channels ).
 
 	Attributes:
@@ -51,23 +51,23 @@ class Engine:
 
 		for x, y in self.coords():
 			cell = world[y][x]
-			if cell != Engine.Wall:
+			if cell != Environment.Wall:
 				self.tiles.append((x, y))
 
-			if cell == Engine.Wall:
+			if cell == Environment.Wall:
 				self.walls[y, x] = 1
 
-			elif cell == Engine.Coin:
+			elif cell == Environment.Coin:
 				self.coins[y, x] = 1
 				self.victory_score += 1
 
-			elif cell == Engine.Pacman:
+			elif cell == Environment.Pacman:
 				pacman = self.agents[0]
 				pacman.position, pacman.walls = array((x, y), dtype=float), self.walls
 
 			elif cell.isnumeric():
 				assert 0 < int(cell) < len(self.agents), "Invalid ghost signature!"
-				gid = Engine.Ghost(cell)
+				gid = Environment.Ghost(cell)
 				self.ghosts[y][x] = gid
 				ghost = self.agents[gid]
 				ghost.color = settings.ghosts[(gid - 1) % len(settings.ghosts)]
@@ -76,7 +76,7 @@ class Engine:
 		# Stores distance between every pair of fields. Usage: "self.dist[(from_x, from_y, to_x, to_y)]"
 		self.dist: Dict[Tuple[int, int, int, int], int] = {}
 		if settings.cache:
-			self._cache(file, world)
+			self._cache(file)
 		else:
 			self._create_dist_dict(width, height)
 
@@ -104,20 +104,20 @@ class Engine:
 	def __getitem__(self, coords):
 		"Access the the object at the given (x, y) map coordinates."
 		x, y = coords
-		if self.walls[y][x] == 1:
-			return Engine.Wall
-		elif self.coins[y][x] == 1:
-			return Engine.Coin
-		elif self.ghosts[y][x]:
-			return self.ghosts[y][x]
+		if self.walls[y, x] == 1:
+			return Environment.Wall
 		elif self.pacman.coords() == (y, x):
-			return Engine.Pacman
-		return Engine.Empty
+			return Environment.Pacman
+		elif self.ghosts[y, x]:
+			return self.ghosts[y, x]
+		elif self.coins[y, x] == 1:
+			return Environment.Coin
+		return Environment.Empty
 
 
 	def __repr__(self):
 		string = []
-		width, height = self.walls.shape
+		width, height = self.shape
 		for y in range(height):
 			string.append("".join(str(self[x, y]) for x in range(width)))
 		return "\n".join(string)
@@ -130,7 +130,7 @@ class Engine:
 			if source == destination:
 				self.dist[(sx, sy, dx, dy)] = 0
 			# Walls are unreachable
-			elif self[source] == Engine.Wall or self[destination] == Engine.Wall:
+			elif self[source] == Environment.Wall or self[destination] == Environment.Wall:
 				self.dist[(sx, sy, dx, dy)] = inf
 			# Difference by one vertically/horizontally
 			elif abs(sx - dx) % (width - 2) + abs(sy - dy) % (height - 2) == 1:
@@ -141,7 +141,7 @@ class Engine:
 		
 		# Switch inf values to NN-safe ones
 		for k, v in self.dist.items():
-			self.dist[k] = Engine.Unreachable if v == inf else v
+			self.dist[k] = Environment.Unreachable if v == inf else v
 	
 
 	def _fw(self, vertices):
@@ -153,7 +153,7 @@ class Engine:
 					self.dist[(from_x, from_y, to_x, to_y)] = dist_through_mid
 
 
-	def _cache(self, file, world):
+	def _cache(self, file):
 		width, height = self.shape
 		pickle_path = file.rsplit("/", 1)[-1] + ".p"
 		try:
@@ -172,7 +172,7 @@ class Engine:
 		Args:
 			field (Tuple[int, int]): Coordinates of the field (y, x).
 		"""
-		distances = ones(self.distances.shape, dtype=int) * Engine.Unreachable
+		distances = ones(self.distances.shape, dtype=int) * Environment.Unreachable
 		from_y, from_x = field
 		for x, y in self.tiles:
 			distances[y][x] = self.dist[(from_x, from_y, x, y)]

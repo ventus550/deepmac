@@ -1,7 +1,7 @@
 import pygame
 from pygame.locals import *
 from pygame.gfxdraw import pie
-from pacman.engine import Engine
+from pacman.environment import Environment
 from pacman import settings
 from numpy import array
 from itertools import product
@@ -9,13 +9,13 @@ from time import sleep
 
 
 
-class GameController(Engine):
+class GameController(Environment):
 	"""
 	Runs the app version of the game.
 	Provides a reliable way of supervising the agents' actions. 
 	"""
-	def __init__(self, pacman, ghosts : list, board = "pacman/default.map"):
-		super().__init__(pacman, ghosts, board)
+	def __init__(self, pacman, ghosts : list, file = "pacman/default.map"):
+		super().__init__(pacman, ghosts, file)
 		pygame.init()
 		screensize = self.shape * settings.blksz
 		self.screen = pygame.display.set_mode(screensize, 0, 32)
@@ -77,10 +77,10 @@ class GameController(Engine):
 		d, blksz = self.distances, settings.blksz
 		for x, y in product(range(width), range(height)):
 			pos = array((x, y)); cell = self[pos]
-			self.draw_wall(pos, fill = cell == Engine.Wall)
-			if settings.distances and d[y, x] != Engine.Unreachable:
+			self.draw_wall(pos, fill = cell == Environment.Wall)
+			if settings.distances and d[y, x] != Environment.Unreachable:
 				self.text(x*blksz, y*blksz, str(d[y, x]), settings.pacman)
-			if cell == Engine.Coin:
+			if cell == Environment.Coin:
 				self.draw_coin(pos)
 		self.draw_pacman(self.agents[0].position)
 		for ghost in self.agents[1:]:

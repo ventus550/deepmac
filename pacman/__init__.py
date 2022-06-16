@@ -1,2 +1,2 @@
-from pacman.engine import Agent, RandomAgent
+from pacman.environment import Agent, RandomAgent, Environment
 from pacman.controller import GameController

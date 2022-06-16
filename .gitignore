@@ -25,6 +25,8 @@ __pycache__/
 *.so
 
 # Distribution / packaging
+pacman/settings
+private/
 .Python
 __pycache__/
 build/
