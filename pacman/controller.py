@@ -6,6 +6,7 @@ from pacman import settings
 from numpy import array
 from itertools import product
 from time import sleep
+import sys
 
 
 
@@ -33,7 +34,7 @@ class GameController(Environment):
 	def checkEvents(self):
 		for event in pygame.event.get():
 			if event.type == QUIT:
-				exit()
+				pygame.quit()
 
 
 	def draw_wall(self, pos, fill = False, size = settings.blksz):
@@ -90,6 +91,8 @@ class GameController(Environment):
 
 	
 	def run(self):
-		while not next(self).terminal():
-			sleep(settings.frame_time)
-			self.update()
+		try:
+			while not next(self).terminal():
+				sleep(settings.frame_time)
+				self.update()
+		except pygame.error: ...
