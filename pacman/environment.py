@@ -1,12 +1,16 @@
 from pacman import settings
-from numpy.random import choice
+from numpy.random import randint
 from numpy import array, zeros, zeros_like, inf, ones
 from math import  floor, ceil
 from itertools import product
 from tqdm.auto import tqdm
 from typing import Dict, Tuple
+from collections import namedtuple
+from copy import deepcopy
 import sys, pickle
 
+
+Transition = namedtuple('Transition', ('state', 'action', 'reward', 'next_state'))
 
 
 class Environment:
@@ -83,21 +87,35 @@ class Environment:
 
 	def __next__(self):
 		"Transition to the next game state."
+		old_state = deepcopy(self.channels)
 		ghosts = zeros_like(self.ghosts)
 		for i, agent in enumerate(self.agents):
-			agent(self.channels)
+			agent(self)
 			pos = agent.coords()
 			ghosts[pos] = i
 
 		pos = self.pacman.coords()
-		self.score += self.coins[pos]
-		self.coins[pos] = 0
 		self.pacman.alive &= not self.ghosts[pos]
+		self.score += self.coins[pos]
 
+		# compute reward
+		reward = self.coins[pos]
+		if not self.pacman.alive:
+			reward = -self.victory_score
+		elif self.score == self.victory_score:
+			reward = self.victory_score
+
+		self.coins[pos] = 0
 		self.ghosts = ghosts
 		self.time += 1
-
 		self.distances = self.dist_matrix(self.pacman.coords())
+
+		# send transition feedback to all agents
+		for agent in self.agents:
+			sentiment = 2*(agent == self.pacman) - 1 
+			transition = Transition(old_state, agent.recent_action, sentiment * reward, deepcopy(self.channels))
+			agent.feedback(transition)
+
 		return self
 
 
@@ -216,7 +234,8 @@ class Agent:
 		self.alive = True
 		self.position = None
 		self.walls = None
-		self.facing = choice((self.left, self.right))
+		self.recent_action = randint(0, 2)
+		self.actions = (self.left, self.right, self.up, self.down)
 
 
 	def coords(self):
@@ -240,23 +259,29 @@ class Agent:
 
 
 	def left(self):
-		self.facing = self.left
+		self.recent_action = 0
 		return self.move(Agent.L)
 
 
 	def right(self):
-		self.facing = self.right
+		self.recent_action = 1
 		return self.move(Agent.R)
 
 
 	def up(self):
-		self.facing = self.up
+		self.recent_action = 2
 		return self.move(Agent.U)
 
 
 	def down(self):
-		self.facing = self.down
+		self.recent_action = 3
 		return self.move(Agent.D)
+
+
+	def feedback(self, transition : Transition):
+		"""
+		Transition feedback sent from the environment after performing action through __call__().
+		"""
 
 
 	def __call__(self, state):
@@ -273,9 +298,7 @@ class RandomAgent(Agent):
 
 	def __init__(self, speed=0.1):
 		super().__init__(speed)
-		self.directions = (self.left, self.right, self.up, self.down)
-
 
 	def __call__(self, state):
-		if not self.facing():
-			self.facing = choice(self.directions)
+		if not self.actions[self.recent_action]():
+			self.recent_action = randint(0, 4)

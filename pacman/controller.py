@@ -47,7 +47,7 @@ class GameController(Environment):
 		x, y = pos * settings.blksz
 		pacman = self.agents[0]
 		ang = abs(self.time % 45 - 22) * 2 + 1
-		rot = {pacman.right : 0, pacman.down : 90, pacman.left : 180, pacman.up : 270}[pacman.facing]
+		rot = {1 : 0, 3 : 90, 0 : 180, 2 : 270}[pacman.recent_action]
 		pie(self.screen, int(x) + radius, int(y) + radius, int(radius * 0.8), ang + rot, 360 - ang + rot, settings.pacman)
 
 	
