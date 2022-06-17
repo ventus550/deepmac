@@ -38,7 +38,7 @@ class DeepAgent(Agent):
 
 
 
-target_net_update = 10
+target_net_update = 2
 ghosts = [RandomAgent(0.05) for _ in range(3)]
 pacman = DeepAgent(1)
 
