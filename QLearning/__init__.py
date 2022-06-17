@@ -1,2 +1,3 @@
 from QLearning.replays import ReplayMemory
-from QLearning.qnetwork import DQN
+from QLearning.Qnetwork import DQN
+from QLearning.Qptimizer import Qptimizer

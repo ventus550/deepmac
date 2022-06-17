@@ -1,7 +1,7 @@
 import pyautogui
 
 # pixel size of game block
-blksz = int(round(pyautogui.size().height / 28 * .9))
+blksz = int(round(pyautogui.size().height / 28 * .8))
 
 # gameplay frame duration in seconds
 frame_time = 0.01

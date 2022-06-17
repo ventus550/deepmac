@@ -23,12 +23,13 @@ class GameController(Environment):
 		self.background = pygame.surface.Surface(screensize).convert()
 		self.background.fill(settings.paths)
 		self.font = pygame.font.SysFont("monospace", settings.blksz // 4)
-		self.run()
 
 
 	def update(self):
+		next(self)
 		self.checkEvents()
 		self.render()
+		return self
 
 
 	def checkEvents(self):
@@ -81,7 +82,7 @@ class GameController(Environment):
 			self.draw_wall(pos, fill = cell == Environment.Wall)
 			if settings.distances and d[y, x] != Environment.Unreachable:
 				self.text(x*blksz, y*blksz, str(d[y, x]), settings.pacman)
-			if cell == Environment.Coin:
+			if self.coins[y, x] == 1:
 				self.draw_coin(pos)
 		self.draw_pacman(self.agents[0].position)
 		for ghost in self.agents[1:]:

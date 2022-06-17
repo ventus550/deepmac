@@ -1,7 +1,6 @@
-from numpy import random
-from collections import namedtuple, deque
-
-Transition = namedtuple('Transition', ('state', 'action', 'reward', 'next_state'))
+from random import choices
+from collections import deque
+from QLearning.utilities import Transition
 
 class ReplayMemory:
     def __init__(self, capacity):
@@ -12,7 +11,7 @@ class ReplayMemory:
         self.memory.append(Transition(*args))
 
     def sample(self, batch_size):
-        return random.sample(self.memory, batch_size)
+        return choices(self.memory, k=batch_size)
 
     def __len__(self):
         return len(self.memory)

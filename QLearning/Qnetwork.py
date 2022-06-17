@@ -1,12 +1,27 @@
 import torch
 from torch import nn
 import torch.nn.functional as F
+from QLearning.utilities import get_device
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-class DQN(nn.Module):
+class QNetwork(nn.Module):
+    def __init__(self):
+        super().__init__()
+    
+    def save(self, path):
+        torch.save(self.state_dict(), path)
+    
+    def load(self, path):
+        self.load_state_dict(torch.load(path))
+
+    def copy_from(self, qnet):
+        self.load_state_dict(qnet.state_dict())
+
+
+class DQN(QNetwork):
     def __init__(self, h, w, outputs):
-        super(DQN, self).__init__()
+        super().__init__()
+        self.device = get_device()
         self.conv1 = nn.Conv2d(4, 16, kernel_size=5, stride=2)
         self.bn1 = nn.BatchNorm2d(16)
         self.conv2 = nn.Conv2d(16, 32, kernel_size=5, stride=2)
@@ -20,11 +35,14 @@ class DQN(nn.Module):
         convh = (conv2d_size_out(conv2d_size_out(h)))
         linear_input_size = convw * convh * 32
         self.head = nn.Linear(linear_input_size, outputs)
+        self.float()
 
     # Called with either one element to determine next action, or a batch
     # during optimization. Returns tensor([[left0exp,right0exp]...]).
     def forward(self, x):
-        x = x.to(device)
+        x = x.to(self.device)
         x = F.relu(self.bn1(self.conv1(x)))
         x = F.relu(self.bn2(self.conv2(x)))
         return self.head(torch.flatten(x, 1))
+
+    

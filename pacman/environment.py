@@ -5,12 +5,105 @@ from math import  floor, ceil
 from itertools import product
 from tqdm.auto import tqdm
 from typing import Dict, Tuple
-from collections import namedtuple
 from copy import deepcopy
 import sys, pickle
 
 
-Transition = namedtuple('Transition', ('state', 'action', 'reward', 'next_state'))
+
+class Agent:
+	"""
+	Entity capable of interacting with the game engine.
+	Use this template to create various game agents through subclassing.
+	Note that __call__( ) method is virtual and has to be implemented ( see RandomAgent example ).
+
+	Attributes:
+		speed		-- the speed with which the agent traverses the environment
+
+		position	-- real agent position ( for discrete representation use Agent.coords( ) instead )
+	"""
+
+	L = array((-1, 0))
+	R = array(( 1, 0))
+	U = array(( 0,-1))
+	D = array(( 0, 1))
+
+	def __init__(self, speed = 0.1):
+		self.speed = speed
+		self.position = None
+		self.walls = None
+		self.recent_action = randint(0, 2)
+		self.actions = (self.left, self.right, self.up, self.down)
+
+
+	def coords(self):
+		"Returns discretized map coordinates."
+		x, y = self.position.round().astype(int)
+		return y, x
+
+
+	def move(self, direction):
+		"Attempt to move in the target direction and return the result."
+		width, height = len(self.walls), len(self.walls[0])
+		x, y = self.position + direction * self.speed
+		rnd = (ceil, floor)
+
+		if all(self.walls[p(y) % height, q(x) % width] == 0 for p, q in product(rnd, rnd)):
+			self.position += direction * self.speed
+			self.position %= (width, height)
+			return True
+		self.position = self.position.round()
+		return False
+
+
+	def left(self):
+		self.recent_action = 0
+		return self.move(Agent.L)
+
+
+	def right(self):
+		self.recent_action = 1
+		return self.move(Agent.R)
+
+
+	def up(self):
+		self.recent_action = 2
+		return self.move(Agent.U)
+
+
+	def down(self):
+		self.recent_action = 3
+		return self.move(Agent.D)
+
+	
+	def perform_action(self, action : int):
+		self.actions[action]()
+
+
+	def feedback(self, state, action, reward, next_state):
+		"""
+		Transition feedback sent from the environment after performing action through __call__().
+		"""
+
+
+	def __call__(self, state):
+		"""
+		Perform an action in response to the current game state.
+		This method is called once every turn.
+		"""
+		raise NotImplementedError
+
+
+
+class RandomAgent(Agent):
+	"Unintelligent and uninteresting, yet pretty useful for testing purposes :)"
+
+	def __init__(self, speed=0.1):
+		super().__init__(speed)
+
+	def __call__(self, state):
+		if not self.actions[self.recent_action]():
+			self.recent_action = randint(0, 4)
+
 
 
 class Environment:
@@ -38,19 +131,20 @@ class Environment:
 	Unreachable = -1
 	path = "/".join(__loader__.path.split('/')[:-1])
 
-	def __init__(self, pacman, ghosts : list, file=f"{path}/default.map"):
+	def __init__(self, pacman = RandomAgent(), ghosts = [RandomAgent(0.05) for _ in range(3)], file=f"{path}/default.map"):
 		"""
 		Load the game world from a map file and spawn the agents.
 		Note that the single digits in the world map file correspond to the ghost agents passed in the argument.
 		"""
-		world 			= open(file).read().split('\n')
-		width, height 	= len(world[0]), len(world)
-		self.shape 		= array((width, height))
-		self.score 		= self.victory_score = self.time = 0
-		self.agents 	= [pacman] + ghosts
-		self.pacman 	= pacman
-		self.tiles 		= []
-		self.channels 	= zeros(shape = (4, height, width), dtype = int)
+		world 				= open(file).read().split('\n')
+		width, height 		= len(world[0]), len(world)
+		self.shape 			= array((width, height))
+		self.score 			= self.victory_score = self.time = 0
+		self.agents 		= [pacman] + ghosts
+		self.pacman 		= pacman
+		self.pacman_alive 	= True
+		self.tiles 			= []
+		self.channels 		= zeros(shape = (4, height, width), dtype = int)
 		self.walls, self.coins, self.ghosts, self.distances = self.channels
 
 		for x, y in self.coords():
@@ -90,17 +184,17 @@ class Environment:
 		old_state = deepcopy(self.channels)
 		ghosts = zeros_like(self.ghosts)
 		for i, agent in enumerate(self.agents):
-			agent(self)
+			agent(self.channels)
 			pos = agent.coords()
 			ghosts[pos] = i
 
 		pos = self.pacman.coords()
-		self.pacman.alive &= not self.ghosts[pos]
+		self.pacman_alive &= not self.ghosts[pos]
 		self.score += self.coins[pos]
 
 		# compute reward
 		reward = self.coins[pos]
-		if not self.pacman.alive:
+		if not self.pacman_alive:
 			reward = -self.victory_score
 		elif self.score == self.victory_score:
 			reward = self.victory_score
@@ -113,8 +207,7 @@ class Environment:
 		# send transition feedback to all agents
 		for agent in self.agents:
 			sentiment = 2*(agent == self.pacman) - 1 
-			transition = Transition(old_state, agent.recent_action, sentiment * reward, deepcopy(self.channels))
-			agent.feedback(transition)
+			agent.feedback(old_state, agent.recent_action, sentiment * reward, deepcopy(self.channels))
 
 		return self
 
@@ -206,99 +299,6 @@ class Environment:
 		"Test if the game has run its course and return the result."
 		if self.score == self.victory_score:
 			return 1
-		if not self.pacman.alive:
+		if not self.pacman_alive:
 			return -1
 		return 0
-
-
-
-class Agent:
-	"""
-	Entity capable of interacting with the game engine.
-	Use this template to create various game agents through subclassing.
-	Note that __call__( ) method is virtual and has to be implemented ( see RandomAgent example ).
-
-	Attributes:
-		speed		-- the speed with which the agent traverses the environment
-
-		position	-- real agent position ( for discrete representation use Agent.coords( ) instead )
-	"""
-
-	L = array((-1, 0))
-	R = array(( 1, 0))
-	U = array(( 0,-1))
-	D = array(( 0, 1))
-
-	def __init__(self, speed = 0.1):
-		self.speed = speed
-		self.alive = True
-		self.position = None
-		self.walls = None
-		self.recent_action = randint(0, 2)
-		self.actions = (self.left, self.right, self.up, self.down)
-
-
-	def coords(self):
-		"Returns discretized map coordinates."
-		x, y = self.position.round().astype(int)
-		return y, x
-
-
-	def move(self, direction):
-		"Attempt to move in the target direction and return the result."
-		width, height = len(self.walls), len(self.walls[0])
-		x, y = self.position + direction * self.speed
-		rnd = (ceil, floor)
-
-		if all(self.walls[p(y) % height, q(x) % width] == 0 for p, q in product(rnd, rnd)):
-			self.position += direction * self.speed
-			self.position %= (width, height)
-			return True
-		self.position = self.position.round()
-		return False
-
-
-	def left(self):
-		self.recent_action = 0
-		return self.move(Agent.L)
-
-
-	def right(self):
-		self.recent_action = 1
-		return self.move(Agent.R)
-
-
-	def up(self):
-		self.recent_action = 2
-		return self.move(Agent.U)
-
-
-	def down(self):
-		self.recent_action = 3
-		return self.move(Agent.D)
-
-
-	def feedback(self, transition : Transition):
-		"""
-		Transition feedback sent from the environment after performing action through __call__().
-		"""
-
-
-	def __call__(self, state):
-		"""
-		Perform an action in response to the current game state.
-		This method is called once every turn.
-		"""
-		raise NotImplementedError
-
-
-
-class RandomAgent(Agent):
-	"Unintelligent and uninteresting, yet pretty useful for testing purposes :)"
-
-	def __init__(self, speed=0.1):
-		super().__init__(speed)
-
-	def __call__(self, state):
-		if not self.actions[self.recent_action]():
-			self.recent_action = randint(0, 4)
