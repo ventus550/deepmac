@@ -29,20 +29,23 @@ class DeepAgent(Agent):
 		)
 
 	def __call__(self, state):
-		action = select_epsilon(self.policy_net, QTensor([state])) #!
+		action = select_epsilon(self.policy_net, QTensor([state]), 0.05) #!
 		self.actions[action]()
 
 	def feedback(self, state, action, reward, state_new):
+		reward = 11 if reward == 1 else reward
+		reward -= 1
 		self.memory.push(QTensor([state]), QTensor([action]), QTensor([reward]), QTensor([state_new]))
-		self.optimizer()
+		self.optimizer(gamma = 0.999)
 
 
 
-target_net_update = 2
+target_net_update = 5
 ghosts = [RandomAgent(0.05) for _ in range(3)]
 pacman = DeepAgent(1)
 
-for episode in range(10):
+for episode in range(100):
+	print(f"episode {episode}")
 	env = GameController(pacman, ghosts)
 	while not env.terminal():
 		next(env).update()

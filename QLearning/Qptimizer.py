@@ -3,6 +3,22 @@ from torch.nn import SmoothL1Loss
 from QLearning.utilities import Transition
 
 class Qptimizer:
+	"""
+	Generic double Qnetwork optimizer class.
+
+	Args:
+		memory		-- replay memory from which training data will be sampled
+
+		optimizer	-- optimization algorithm
+
+		policy_net	-- dynamically updated Qnetwork
+
+		target_net	-- updates every few episodes in order to stablizie learning
+
+		criterion	-- applied to residuals to compute loss
+
+		batchsz		-- size of each training batch
+	"""
 	def __init__(self, memory, optimizer, policy_net, target_net, criterion = SmoothL1Loss(), batchsz = 128):
 		self.memory = memory
 		self.optimizer = optimizer
@@ -12,6 +28,7 @@ class Qptimizer:
 		self.batchsz = batchsz
 	
 	def __call__(self, gamma = 0.5):
+		"""Perform single optimization step with gamma discount."""
 		if len(self.memory) < self.batchsz:
 			return
 		transitions = self.memory.sample(self.batchsz)

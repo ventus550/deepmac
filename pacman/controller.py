@@ -6,8 +6,6 @@ from pacman import settings
 from numpy import array
 from itertools import product
 from time import sleep
-import sys
-
 
 
 class GameController(Environment):
