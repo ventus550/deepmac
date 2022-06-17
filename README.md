@@ -6,7 +6,7 @@ Deep Q-learning pacman agent
 
 ### Missing Features
 - Loss function plotting
-- Some sort of test lab to make testing easier
+- Some sort of test lab to make testing new agents easier and simpler
 - Agent movements should be smooth and stable (direction can't be changed every frame)
 
 ### Performance Improvements
@@ -24,4 +24,5 @@ Deep Q-learning pacman agent
 - Gamma (reward discounts)
 - Target network update frequency
 - Loss criteria (MSE, Hubert, Entropy etc.)
-- Training batch and replay memory size 
+- Training batch and replay memory size
+- Input formats (prehaps pacman should not be 0 after all D:)
