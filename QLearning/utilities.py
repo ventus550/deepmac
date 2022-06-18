@@ -1,7 +1,9 @@
 import torch
 from random import random, randint
 from collections import namedtuple
-
+import matplotlib.pyplot as plt
+from seaborn import set_theme
+set_theme(style = "darkgrid", palette="dark")
 
 Transition = namedtuple('Transition', ('state', 'action', 'reward', 'next_state'))
 
@@ -25,3 +27,10 @@ def select_epsilon(policy_net, state, epsilon = 0.5):
 	if roll > epsilon:
 		return select_action(policy_net, state)
 	return randint(0, 3)
+
+
+def quickplot(values, values_title = "quickplot", path = "./quickplot"):
+	plt.plot(values)
+	plt.ylabel(values_title)
+	plt.savefig(path)
+	plt.clf()

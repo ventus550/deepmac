@@ -1,7 +1,7 @@
 import torch
 import numpy as np
 from QLearning import DQN, ReplayMemory, Qptimizer
-from QLearning.utilities import select_epsilon, get_device
+from QLearning.utilities import select_epsilon, get_device, quickplot
 from pacman import Environment, RandomAgent, Agent, GameController
 
 device = get_device()
@@ -33,8 +33,9 @@ class DeepAgent(Agent):
 		self.actions[action]()
 
 	def feedback(self, state, action, reward, state_new):
-		reward = 11 if reward == 1 else reward
+		reward = 101 if reward == 1 else reward
 		reward -= 1
+		reward *= 1000
 		self.memory.push(QTensor([state]), QTensor([action]), QTensor([reward]), QTensor([state_new]))
 		self.optimizer(gamma = 0.999)
 
@@ -44,6 +45,7 @@ target_net_update = 5
 ghosts = [RandomAgent(0.05) for _ in range(3)]
 pacman = DeepAgent(1)
 
+score_history = []
 for episode in range(100):
 	print(f"episode {episode}")
 	env = GameController(pacman, ghosts)
@@ -51,6 +53,9 @@ for episode in range(100):
 		next(env).update()
 	if episode % target_net_update == 0:
 		pacman.target_net.copy_from(pacman.policy_net)
+	pacman.optimizer.plot_loss_variance()
+	score_history.append(env.score)
+	quickplot(score_history, "Score", "./score")
 
 
 

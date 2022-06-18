@@ -1,6 +1,6 @@
 import torch
 from torch.nn import SmoothL1Loss
-from QLearning.utilities import Transition
+from QLearning.utilities import Transition, quickplot
 
 class Qptimizer:
 	"""
@@ -26,6 +26,11 @@ class Qptimizer:
 		self.target_net = target_net
 		self.criterion = criterion
 		self.batchsz = batchsz
+		self.loss_variance_history = [0]
+		self.variance = 0
+
+	def plot_loss_variance(self, path = './loss'):
+		quickplot(self.loss_variance_history, "Loss Variance", path = path)
 	
 	def __call__(self, gamma = 0.5):
 		"""Perform single optimization step with gamma discount."""
@@ -53,8 +58,10 @@ class Qptimizer:
 		Q_target = self.target_net(next_batch).max(1)[0].detach()
 		Q_expected = (Q_target * gamma) + reward_batch
 
-		# Compute loss function
+		# Compute loss diagnostics using rolling variance
 		loss = self.criterion(Q_policy, Q_expected.unsqueeze(1))
+		self.variance += (loss.item()**2 - self.variance) / len(self.loss_variance_history)
+		self.loss_variance_history.append(self.variance)
 
 		# Optimize the model
 		self.optimizer.zero_grad()
