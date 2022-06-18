@@ -132,8 +132,9 @@ class Environment:
 	Ghost = int
 	Unreachable = -1
 	path = "/".join(__loader__.path.split('/')[:-1])
+	default_ghosts = [RandomAgent(0.05) for _ in range(3)]
 
-	def __init__(self, pacman = RandomAgent(), ghosts = [RandomAgent(0.05) for _ in range(3)], file=f"{path}/default.map"):
+	def __init__(self, pacman = RandomAgent(), ghosts = default_ghosts, file=f"{path}/default.map"):
 		"""
 		Load the game world from a map file and spawn the agents.
 		Note that the single digits in the world map file correspond to the ghost agents passed in the argument.

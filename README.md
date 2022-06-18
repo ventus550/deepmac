@@ -5,7 +5,6 @@ Deep Q-learning pacman agent
 ## TODO
 
 ### Missing Features
-- Some sort of test lab to make testing new agents easier and simpler
 - Agent movements should be smooth and stable (direction can't be changed every frame)
 
 ### Performance Improvements
@@ -15,12 +14,13 @@ Deep Q-learning pacman agent
 - Multithreading?
 
 ### Parameter Testing
-- Reward system (passivity should be discouraged)
 - Network architectures
-- Optimizers
-- Epsilon (or episolon scheduler)
-- Gamma (reward discounts)
-- Target network update frequency
-- Loss criteria (MSE, Hubert, Entropy etc.)
-- Training batch and replay memory size
+- Reward system (passivity should be discouraged)
 - Input formats (perhaps pacman should not be 0 after all D:)
+- Gamma (reward discounts)
+
+- Training batch and replay memory size
+- Epsilon (or episolon scheduler)
+- Optimizers
+- Loss criteria (MSE, Hubert, Entropy etc.)
+- Target network update frequency
