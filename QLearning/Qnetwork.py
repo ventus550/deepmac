@@ -1,6 +1,7 @@
 import torch
 from torch import nn
 import torch.nn.functional as F
+from copy import deepcopy
 from QLearning.utilities import get_device
 
 
@@ -26,12 +27,17 @@ class QNetwork(nn.Module):
         of another network with the same architecture.
         """
         self.load_state_dict(qnet.state_dict())
+    
+    def clone(self):
+        "Make a clone of the model"
+        return deepcopy(self)
 
 
 class DQN(QNetwork):
     "Simple and probably terrible triple layered qnetwork."
-    def __init__(self, h, w, outputs):
+    def __init__(self, h, w):
         super().__init__()
+        actions = 4
         self.device = get_device()
         self.conv1 = nn.Conv2d(4, 16, kernel_size=5, stride=2)
         self.bn1 = nn.BatchNorm2d(16)
@@ -45,7 +51,7 @@ class DQN(QNetwork):
         convw = (conv2d_size_out(conv2d_size_out(w)))
         convh = (conv2d_size_out(conv2d_size_out(h)))
         linear_input_size = convw * convh * 32
-        self.head = nn.Linear(linear_input_size, outputs)
+        self.head = nn.Linear(linear_input_size, actions)
         self.float()
 
     # Called with either one element to determine next action, or a batch

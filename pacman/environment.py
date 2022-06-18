@@ -1,11 +1,13 @@
 from pacman import settings
 from numpy.random import randint
-from numpy import array, zeros, zeros_like, inf, ones
+from numpy import array, inf
 from math import  floor, ceil
 from itertools import product
 from tqdm.auto import tqdm
 from typing import Dict, Tuple
-from copy import deepcopy
+import torch
+from torch import tensor
+
 import sys, pickle
 
 
@@ -144,7 +146,7 @@ class Environment:
 		self.pacman 		= pacman
 		self.pacman_alive 	= True
 		self.tiles 			= []
-		self.channels 		= zeros(shape = (4, height, width), dtype = int)
+		self.channels 		= torch.zeros(4, height, width, dtype = int)
 		self.walls, self.coins, self.ghosts, self.distances = self.channels
 
 		for x, y in self.coords():
@@ -181,10 +183,10 @@ class Environment:
 
 	def __next__(self):
 		"Transition to the next game state."
-		old_state = deepcopy(self.channels)
-		ghosts = zeros_like(self.ghosts)
+		old_state = self.channels.float() # copying cast
+		ghosts = torch.zeros_like(self.ghosts)
 		for i, agent in enumerate(self.agents):
-			agent(self.channels)
+			agent(old_state)
 			pos = agent.coords()
 			ghosts[pos] = i
 
@@ -195,9 +197,9 @@ class Environment:
 		# compute reward
 		reward = self.coins[pos]
 		if not self.pacman_alive:
-			reward = -self.victory_score
+			reward -= self.victory_score
 		elif self.score == self.victory_score:
-			reward = self.victory_score
+			reward += self.victory_score
 
 		self.coins[pos] = 0
 		self.ghosts = ghosts
@@ -207,7 +209,12 @@ class Environment:
 		# send transition feedback to all agents
 		for agent in self.agents:
 			sentiment = 2*(agent == self.pacman) - 1 
-			agent.feedback(old_state, agent.recent_action, sentiment * reward, deepcopy(self.channels))
+			agent.feedback(
+				old_state,
+				tensor(agent.recent_action, dtype=torch.float),
+				(sentiment * reward).float(),
+				self.channels.float()
+			)
 
 		return self
 
@@ -283,7 +290,7 @@ class Environment:
 		Args:
 			field (Tuple[int, int]): Coordinates of the field (y, x).
 		"""
-		distances = ones(self.distances.shape, dtype=int) * Environment.Unreachable
+		distances = torch.ones(self.distances.shape, dtype=int) * Environment.Unreachable
 		from_y, from_x = field
 		for x, y in self.tiles:
 			distances[y][x] = self.dist[(from_x, from_y, x, y)]

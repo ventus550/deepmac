@@ -9,7 +9,6 @@ Deep Q-learning pacman agent
 - Agent movements should be smooth and stable (direction can't be changed every frame)
 
 ### Performance Improvements
-- Environment should operate on tensors instead of numpy arrays
 - Identify and optimize bottlenecks
 - Shorten game duration (with hard cap, soft tolerance cap or with more agressive ghost agents)
 - Run networks on cuda?

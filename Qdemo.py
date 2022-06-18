@@ -7,15 +7,15 @@ from pacman import Environment, RandomAgent, Agent, GameController
 device = get_device()
 height, width = Environment().shape
 
-def QTensor(array, dtype=torch.float):
-	return torch.tensor(np.array(array), dtype=dtype)
+def QTensor(t, dtype=torch.float):
+	return t.unsqueeze(0)
 
 class DeepAgent(Agent):
 	def __init__(self, speed=0.1):
 		super().__init__(speed)
 
-		self.policy_net = DQN(height, width, 4).to(device)
-		self.target_net = DQN(height, width, 4).to(device)
+		self.policy_net = DQN(height, width).to(device)
+		self.target_net = DQN(height, width).to(device)
 		self.target_net.copy_from(self.policy_net)
 		self.target_net.eval()
 
@@ -29,14 +29,14 @@ class DeepAgent(Agent):
 		)
 
 	def __call__(self, state):
-		action = select_epsilon(self.policy_net, QTensor([state]), 0.05) #!
+		action = select_epsilon(self.policy_net, state.unsqueeze(0), 0.05) #!
 		self.actions[action]()
 
-	def feedback(self, state, action, reward, state_new):
+	def feedback(self, state, action, reward, new_state):
 		reward = 101 if reward == 1 else reward
 		reward -= 1
 		reward *= 1000
-		self.memory.push(QTensor([state]), QTensor([action]), QTensor([reward]), QTensor([state_new]))
+		self.memory.push(state, action, reward, new_state)
 		self.optimizer(gamma = 0.999)
 
 
