@@ -27,10 +27,14 @@ class Qptimizer:
 		self.criterion = criterion
 		self.batchsz = batchsz
 		self.loss_variance_history = [0]
+		self.loss_history = [0]
 		self.variance = 0
 
-	def plot_loss_variance(self, path = './loss'):
+	def plot_loss_variance(self, path = './variance'):
 		quickplot(self.loss_variance_history, "Loss Variance", path = path)
+	
+	def plot_loss(self, path = './loss'):
+		quickplot(self.loss_history, "Loss", path = path)
 	
 	def __call__(self, gamma = 0.5):
 		"""Perform single optimization step with gamma discount."""
@@ -60,8 +64,10 @@ class Qptimizer:
 
 		# Compute loss diagnostics using rolling variance
 		loss = self.criterion(Q_policy, Q_expected.unsqueeze(1))
+		self.loss_history.append(loss.item())
 		self.variance += (loss.item()**2 - self.variance) / len(self.loss_variance_history)
 		self.loss_variance_history.append(self.variance)
+
 
 		# Optimize the model
 		self.optimizer.zero_grad()
