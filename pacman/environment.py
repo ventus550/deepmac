@@ -108,6 +108,29 @@ class RandomAgent(Agent):
 
 
 
+class ChaserAgent(Agent):
+	"""Designated for ghost. Constantly chasing Pac-Man."""
+
+	def __init__(self, speed=.1):
+		super().__init__(speed)
+
+	def __call__(self, state):
+		my_coords = self.coords()
+		my_y, my_x = my_coords
+		my_coords = (my_x, my_y)
+  
+		distances = state[3]
+		dirs = [(-1, 0), (1, 0), (0, -1), (0, 1)]
+  
+		def get_value_ignore_neg_inf(i):
+			v = distances[(my_y + dirs[i][1]) % distances.shape[0]][(my_x + dirs[i][0]) % distances.shape[1]]
+			return v if v >= 0 else inf
+  
+		dir_idx = min(range(len(dirs)), key=lambda i: get_value_ignore_neg_inf(i))
+		self.actions[dir_idx]()
+
+
+
 class Environment:
 	"""
 	Stores and manages the game environment and all its agents.
@@ -205,7 +228,7 @@ class Environment:
 		self.coins[pos] = 0
 		self.ghosts = ghosts
 		self.time += 1
-		self.distances = self.dist_matrix(self.pacman.coords())
+		self.distances[...] = self.dist_matrix(self.pacman.coords())
 
 		# send transition feedback to all agents
 		for agent in self.agents:
