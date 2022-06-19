@@ -7,6 +7,7 @@ from tqdm.auto import tqdm
 from typing import Dict, Tuple
 import torch
 from torch import tensor
+import pygame
 
 import sys, pickle
 
@@ -105,6 +106,25 @@ class RandomAgent(Agent):
 	def __call__(self, state):
 		if not self.actions[self.recent_action]():
 			self.recent_action = randint(0, 4)
+
+
+
+class ControllableAgent(Agent):
+	""""Agent that can be controlled with keyboard."""
+
+	def __init__(self, speed=.1):
+		super().__init__(speed)
+
+	def __call__(self, state):
+		keys = pygame.key.get_pressed()
+		if keys[pygame.K_UP]:
+			self.up()
+		if keys[pygame.K_DOWN]:
+			self.down()
+		if keys[pygame.K_LEFT]:
+			self.left()
+		if keys[pygame.K_RIGHT]:
+			self.right()
 
 
 
