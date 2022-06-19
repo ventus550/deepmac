@@ -176,6 +176,7 @@ class Environment:
 	Unreachable = -1
 	path = "/".join(__loader__.path.split('/')[:-1])
 	default_ghosts = [RandomAgent(0.05) for _ in range(3)]
+	hostile_ghosts = [RandomAgent(0.1) for _ in range(2)] + [ChaserAgent(0.1)]
 
 	def __init__(self, pacman = RandomAgent(), ghosts = default_ghosts, file=f"{path}/default.map"):
 		"""
