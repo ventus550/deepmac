@@ -205,7 +205,7 @@ class Environment:
 		self.coins[pos] = 0
 		self.ghosts = ghosts
 		self.time += 1
-		self.distances = self.dist_matrix(self.pacman.coords())
+		self.distances[...] = self.dist_matrix(self.pacman.coords())
 
 		# send transition feedback to all agents
 		for agent in self.agents:
