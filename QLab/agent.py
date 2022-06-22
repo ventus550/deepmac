@@ -11,23 +11,22 @@ class SimpleAgent(Agent):
 
 	def __init__(self, qnet : QNetwork, learning_rate = 0.01, gamma = 0.999, speed = 1):
 		super().__init__(speed)
-		# self.catalog = f"{path}/{name}"
-		# if not os.path.exists(self.catalog):
-		# 	os.makedirs(self.catalog)
 		self.gamma = gamma
-		self.memory = ReplayMemory(10000)
+		self.memory = ReplayMemory(100000)
 
 		self.policy_net = qnet
 		self.target_net = qnet.clone()
 		self.target_net.copy_from(self.policy_net)
 		self.target_net.eval()
 
-		self.optimizer = torch.optim.RMSprop(self.policy_net.parameters(), lr=learning_rate)
+		# self.optimizer = torch.optim.RMSprop(self.policy_net.parameters(), lr=learning_rate)
+		self.optimizer = torch.optim.Adam(self.policy_net.parameters(), lr=learning_rate)
 		self.optimizer = Qptimizer(
 			self.memory,
 			self.optimizer,
 			self.policy_net,
-			self.target_net
+			self.target_net,
+			criterion = torch.nn.MSELoss()
 		)
 
 	def __call__(self, state):
