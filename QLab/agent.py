@@ -1,17 +1,19 @@
 import context
 import torch
-from pacman import Agent, Environment, GameController
+from pacman import RandomAgent, Environment, GameController
 from QLearning import QNetwork, Qptimizer, ReplayMemory, utilities
 from tqdm import tqdm
+from random import random
 
 
 path = "/".join(__loader__.path.split('/')[:-1])
 
-class SimpleAgent(Agent):
+class SimpleAgent(RandomAgent):
 
-	def __init__(self, qnet : QNetwork, learning_rate = 0.01, gamma = 0.999, speed = 1):
+	def __init__(self, qnet : QNetwork, learning_rate = 0.01, gamma = 0.999, epsilon = 0.05, speed = 1):
 		super().__init__(speed)
 		self.gamma = gamma
+		self.epsilon = epsilon
 		self.memory = ReplayMemory(100000)
 
 		self.policy_net = qnet
@@ -30,8 +32,13 @@ class SimpleAgent(Agent):
 		)
 
 	def __call__(self, state):
-		action = utilities.select_epsilon(self.policy_net, state.unsqueeze(0), 0.05) #!
-		self.perform_action(action)
+		roll = random()
+		if roll > self.epsilon:
+			action = utilities.select_action(self.policy_net, state.unsqueeze(0))
+			self.perform_action(action)
+		else:
+			super().__call__(state)
+		#action = utilities.select_epsilon(self.policy_net, state.unsqueeze(0), 0.05) #!
 
 	def save(self, path = "./net"):
 		self.policy_net.save(path)

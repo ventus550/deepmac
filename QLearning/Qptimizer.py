@@ -45,22 +45,23 @@ class Qptimizer:
 		# Convert batch of transitions into transition of batches
 		batch = Transition(*zip(*transitions))
 		state_batch = torch.cat(batch.state)
-		reward_batch = torch.cat(batch.reward)
 		action_batch = torch.cat(batch.action)
-		next_batch = torch.cat(batch.next_state)
+		reward_batch = torch.cat(batch.reward)
 		action_batch = action_batch.unsqueeze(1).type(torch.int64)
-
-		# Compute Q(s_t, a) - the model computes Q(s_t), then we select the
-		# columns of actions taken. These are the actions which would've been taken
-		# for each batch state according to policy_net
-		Q_policy = self.policy_net(state_batch)
-		Q_policy = Q_policy.gather(1, action_batch)
 
 		# Compute V(s_{t+1}) for all next states.
 		# Expected values of actions for next_batch are computed based
 		# on the "older" target_net; selecting their best reward with max(1)[0].
-		Q_target = self.target_net(next_batch).max(1)[0].detach()
+		non_final_mask = torch.tensor(tuple(map(lambda s: s is not None, batch.next_state)), dtype=torch.bool)
+		non_final_next_states = torch.cat([s for s in batch.next_state if s is not None])
+		Q_target = torch.zeros(len(state_batch))
+		Q_target[non_final_mask] = self.target_net(non_final_next_states).max(1)[0].detach()
 		Q_expected = (Q_target * gamma) + reward_batch
+
+		# Compute Q(s_t, a) - the model computes Q(s_t), then we select the
+		# columns of actions taken. These are the actions which would've been taken
+		# for each batch state according to policy_net
+		Q_policy = self.policy_net(state_batch).gather(1, action_batch)
 
 		# Compute loss diagnostics using rolling variance
 		loss = self.criterion(Q_policy, Q_expected.unsqueeze(1))

@@ -229,6 +229,7 @@ class Environment:
 	def __next__(self):
 		"Transition to the next game state."
 		old_state = self.channels.float() # copying cast
+		new_state = None
 		ghosts = torch.zeros_like(self.ghosts)
 		for i, agent in enumerate(self.agents):
 			agent(old_state)
@@ -245,6 +246,8 @@ class Environment:
 			reward -= self.victory_score
 		elif self.score == self.victory_score:
 			reward += self.victory_score
+		else:
+			new_state = self.channels.float()
 
 		self.coins[pos] = 0
 		self.ghosts = ghosts
@@ -258,7 +261,7 @@ class Environment:
 				old_state,
 				tensor(agent.recent_action, dtype=torch.float),
 				(sentiment * reward).float(),
-				self.channels.float()
+				new_state
 			)
 
 		return self

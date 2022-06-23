@@ -14,12 +14,14 @@ class ReplayMemory:
 
     def push(self, state, action, reward, new_state):
         "Save a transition."
+        if new_state is not None:
+            new_state = new_state.unsqueeze(0)
         self.memory.append(
             Transition(
                 state.unsqueeze(0),
                 action.unsqueeze(0),
                 reward.unsqueeze(0),
-                new_state.unsqueeze(0)
+                new_state
             )
         )
 
