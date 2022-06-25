@@ -52,7 +52,9 @@ class Agent:
 
 		if all(self.walls[p(y) % height, q(x) % width] == 0 for p, q in product(rnd, rnd)):
 			self.position += direction * self.speed
-			self.position %= (width, height)
+			self.position %= (width - 1, height - 1)
+			# print(width, height)
+			# print(self.position, self.position.round(), self.position.round() % (width, height))
 			return True
 		self.position = self.position.round()
 		return False
@@ -186,6 +188,7 @@ class Environment:
 		world 				= open(file).read().split('\n')
 		width, height 		= len(world[0]), len(world)
 		self.shape 			= array((width, height))
+		self.file			= file
 		self.score 			= self.victory_score = self.time = 0
 		self.agents 		= [pacman] + ghosts
 		self.pacman 		= pacman
@@ -224,6 +227,7 @@ class Environment:
 			self._cache(file)
 		else:
 			self._create_dist_dict(width, height)
+		self.distances[...] = self.dist_matrix(self.pacman.coords())
 
 
 	def __next__(self):
@@ -241,18 +245,17 @@ class Environment:
 		self.score += self.coins[pos]
 
 		# compute reward
-		reward = self.coins[pos]
-		if not self.pacman_alive:
-			reward -= self.victory_score
-		elif self.score == self.victory_score:
+		reward = self.coins[pos] * 10
+		if self.score == self.victory_score:
 			reward += self.victory_score
-		else:
-			new_state = self.channels.float()
-
+		
 		self.coins[pos] = 0
 		self.ghosts = ghosts
 		self.time += 1
 		self.distances[...] = self.dist_matrix(self.pacman.coords())
+
+		if not self.terminal():
+			new_state = self.channels.float()
 
 		# send transition feedback to all agents
 		for agent in self.agents:
@@ -275,7 +278,7 @@ class Environment:
 		elif self.pacman.coords() == (y, x):
 			return Environment.Pacman
 		elif self.ghosts[y, x]:
-			return self.ghosts[y, x]
+			return self.ghosts[y, x].item()
 		elif self.coins[y, x] == 1:
 			return Environment.Coin
 		return Environment.Empty

@@ -34,6 +34,9 @@ class GameController(Environment):
 		for event in pygame.event.get():
 			if event.type == QUIT:
 				pygame.quit()
+	
+	def close(self):
+		pygame.quit()
 
 
 	def draw_wall(self, pos, fill = False, size = settings.blksz):
