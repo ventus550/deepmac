@@ -52,7 +52,7 @@ class Agent:
 
 		if all(self.walls[p(y) % height, q(x) % width] == 0 for p, q in product(rnd, rnd)):
 			self.position += direction * self.speed
-			self.position %= (width - 1, height - 1)
+			self.position %= (width, height)
 			# print(width, height)
 			# print(self.position, self.position.round(), self.position.round() % (width, height))
 			return True
