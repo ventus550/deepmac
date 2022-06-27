@@ -6,6 +6,8 @@ from pacman import settings
 from numpy import array
 from itertools import product
 from time import sleep
+import torch
+import numpy as np
 
 
 class GameController(Environment):
@@ -98,3 +100,14 @@ class GameController(Environment):
 				sleep(settings.frame_time)
 				self.update()
 		except pygame.error: ...
+
+
+
+class GameControllerCVTraining(GameController):
+	def run(self):
+		try:
+			while not next(self).terminal():
+				# don't wait for fixed fps
+				self.update()
+		except pygame.error:
+			pass
